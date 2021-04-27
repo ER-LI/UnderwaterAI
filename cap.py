@@ -1,19 +1,31 @@
 import cv2
 import datetime
-cam_url='rtsp://admin:123456@192.168.1.10:554/Streaming/Channels/201'
+cam_url1='rtsp://admin:123456@192.168.1.10:554/Streaming/Channels/201'
+cam_url2='rtsp://admin:123456@192.168.1.20:554/Streaming/Channels/201'
+cam_url3='rtsp://admin:123456@192.168.1.10:554/Streaming/Channels/201'
 f = cv2.VideoWriter_fourcc(*'MP42')
-out = cv2.VideoWriter("test01.avi",f,10,(1920,1080))
-cap=cv2.VideoCapture(cam_url)                         #调用IP摄像头
+out1 = cv2.VideoWriter("test01.avi",f,10,(1920,1080))
+out2 = cv2.VideoWriter("test02.avi",f,10,(1920,1080))
+out3 = cv2.VideoWriter("test03.avi",f,10,(1920,1080))
+cap=cv2.VideoCapture(cam_url1)
+cap=cv2.VideoCapture(cam_url2)
+cap=cv2.VideoCapture(cam_url3) #调用IP摄像头
 
 if cap.isOpened():
     rval, frame = cap.read()                          #读取视频流
 else:
-    cap.open(cam_url)                                 #打开读取的视频流
+    cap.open(cam_url1)
+    cap.open(cam_url2)
+    #cap.open(cam_url3) #打开读取的视频流
     rval = False
     print("error")
 while rval:
-    frame=cv2.resize(frame,(1920,1080))                 #调节输出图像的大小
-    rval, frame = cap.read()
+    frame1 = cv2.resize(frame1,(1920,1080))
+    rval, frame1 = cap.read()
+    frame2 = cv2.resize(frame2, (1920, 1080))
+    rval, frame2 = cap.read()
+    #frame3 = cv2.resize(frame3, (1920, 1080))
+    rval, frame3 = cap.read()
     if rval == True:
         font = cv2.FONT_HERSHEY_SIMPLEX
         #text = "1920x1080"
@@ -21,8 +33,13 @@ while rval:
         #frame = cv2.putText(frame,text,(10,50),font,0.5,(0,255,255),2,cv2.LINE_AA)
         #frame = cv2.putText(frame,time,(10,100),font,1,(0,255,255),2,cv2.LINE_AA)
 
-        out.write(frame)
-        cv2.imshow("cam_num1", frame)  # 显示视频流
+        out1.write(frame1)
+        out1.write(frame2)
+        
+        out1.write(frame3)
+        cv2.imshow("cam_num1", frame1)
+        cv2.imshow("cam_num2", frame2)
+        cv2.imshow("cam_num3", frame3)# 显示视频流
 
     else:
         break
