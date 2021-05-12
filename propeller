@@ -1,0 +1,78 @@
+
+from _typeshed import SupportsKeysAndGetItem
+from water_depth_sensor import WaterDepthSensor
+from  adafruit_servokit import ServoKit
+from adafruit_pca9685 import PCA9685
+
+import board
+import busio
+
+
+class Propeller():
+    '''
+    Manage PWM output
+    Upper layer will never know what is PWM, channel.
+
+    '''
+
+    def __init__(self):
+        # init PCA9685
+        pwm_controller_address = 0x40
+        i2c_bus0=(busio.I2C(board.SCL_1,board.SDA_1,frequency=400000))
+        my=ServoKit(channels=16,i2c=i2c_bus0,address=text_address,frequency=49.5)
+
+        self.__water_depth_sensor = WaterDepthSensor()
+        self.__target_water_depth = 0
+        # self.__moving_speed = 0
+
+
+    def move_forward(self, speed):
+        '''
+        turn on PWM #1,#3
+        '''
+
+        pass
+    
+    def move_backward(self, speed):
+        '''
+        turn on PWM #5, 6
+        '''
+
+    def move_self(self, speed):
+        pass
+
+    def move_right(self, speed):
+        pass
+    def move_up(self, speed, to_water_depth):
+        '''
+        move up to a certain depth
+        '''
+        self.__target_water_depth = to_water_depth
+
+    def move_down(self, speed):
+        pass
+    def turn_left(self, speed):
+        pass
+    def turn_right(self,speed):
+        pass
+    
+    def __move_up_down(self, speed):
+        '''
+        Turn on PWM # 5,6,7,8  at the speed
+        '''
+        pass
+
+    def spin(self):
+        '''
+        This will run at a new thread. to keep the water_depth_position
+        '''
+        current_depth = self.__water_depth_sensor.read_water_depth()
+        if current_depth < self.__target_water_depth -1 :
+            # should move down
+            speed = 10
+        elif current_depth > self.__target_water_depth + 1:
+            # should move up
+            speed = -10
+        else: 
+            speed = 0
+        self.__move_up_down(speed)
