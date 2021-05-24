@@ -1,78 +1,104 @@
-
-from _typeshed import SupportsKeysAndGetItem
+from propeller import Propeller
 from water_depth_sensor import WaterDepthSensor
-from  adafruit_servokit import ServoKit
-from adafruit_pca9685 import PCA9685
 
+
+import time
 import board
 import busio
-
-
-class Propeller():
-    '''
-    Manage PWM output
-    Upper layer will never know what is PWM, channel.
-
-    '''
+import adafruit_ads1x15.ads1015 as ADS
+from adafruit_ads1x15.analog_in import AnalogIn
+from adafruit_ads1x15.ads1x15 import Mode
+class UwBot():
 
     def __init__(self):
-        # init PCA9685
-        pwm_controller_address = 0x40
-        i2c_bus0=(busio.I2C(board.SCL_1,board.SDA_1,frequency=400000))
-        my=ServoKit(channels=16,i2c=i2c_bus0,address=text_address,frequency=49.5)
+        # Init GPIO
+        self.__propeller = Propeller()
 
-        self.__water_depth_sensor = WaterDepthSensor()
-        self.__target_water_depth = 0
-        # self.__moving_speed = 0
-
-
-    def move_forward(self, speed):
-        '''
-        turn on PWM #1,#3
-        '''
-
+        # int DHT11
         pass
+
+    def move(self,direction,speed):
+        '''
+        direction list = ['FORWARD', 'BACKWARD']
+        speed must in range [0,100]
+        '''
+        Propeller.__init__(self)
+        now_speed_clockwise = 83.55 * ((101 - speed) / 100)
+        now_speed_counterclockwise = 180 - 83.55 * ((101 - speed) / 100)
+        if direction == 'FORWARD':
+         
+            self.__propeller.move_forward(now_speed_clockwise)
+        
+        elif direction == 'BAKCWORD':
+
+            self.__propeller.move_backward(now_speed_counterclockwise)
+            
+        elif direction == 'left':
+            self.__propeller.move_left(now_speed_clockwise,now_speed_counterclockwise)
+
+        elif direction == 'right':
+            self.__propeller.move_right(now_speed_clockwise,now_speed_counterclockwise)
+
+        elif direction == 'up':
+            water_depth = WaterDepthSensor.read_water_depth()
+            self.__propeller.move_up(now_speed_clockwise,water_depth)
+        
+        elif direction == 'down' :
+            water_depth = WaterDepthSensor.read_water_depth()
+            print(water_depth)
+            self.__propeller.move_down(now_speed_counterclockwise,water_depth)
+            
+        elif direction == 'turn_left':
+            self.__propeller.turn_left(now_speed_clockwise,now_speed_counterclockwise)
+
+        elif direction == 'turn_right':
+            self.__propeller.turn_right(now_speed_clockwise,now_speed_counterclockwise)
     
-    def move_backward(self, speed):
-        '''
-        turn on PWM #5, 6
-        '''
-
-    def move_self(self, speed):
+    def start_all_cameras(self):
         pass
 
-    def move_right(self, speed):
+    def read_room_humidity(self):
         pass
-    def move_up(self, speed, to_water_depth):
-        '''
-        move up to a certain depth
-        '''
-        self.__target_water_depth = to_water_depth
 
-    def move_down(self, speed):
+    def read_room_temperature(self):
         pass
-    def turn_left(self, speed):
+
+    def read_user_button(self):
         pass
-    def turn_right(self,speed):
+
+
+    def read_distance_to_bottom(self):
         pass
-    
-    def __move_up_down(self, speed):
+
+    def read_water_depth(self):
+        pass
+
+    def read_battery(self):
         '''
-        Turn on PWM # 5,6,7,8  at the speed
+        range is [0,100]
         '''
-        pass
+        ads1015_address = 0x48
+
+        i2c_bus1 = (busio.I2C(board.SCL_1, board.SDA_1,frequency=100000))
+
+        ads = ADS.ADS1015(i2c_bus1,address=ads1015_address )
+
+        chan = AnalogIn(ads, ADS.P1)
+
+        percent =(1 - (chan.voltage - 2.55)/-0.35) * 100   
+        return percent
 
     def spin(self):
-        '''
-        This will run at a new thread. to keep the water_depth_position
-        '''
-        current_depth = self.__water_depth_sensor.read_water_depth()
-        if current_depth < self.__target_water_depth -1 :
-            # should move down
-            speed = 10
-        elif current_depth > self.__target_water_depth + 1:
-            # should move up
-            speed = -10
-        else: 
-            speed = 0
-        self.__move_up_down(speed)
+        while True:
+            v = UwBot.read_battery(self)
+            if v < 20:
+                self.__propeller.move_up(20, 0)
+                
+
+
+
+if __name__ == '__main__':
+    '''
+    The speed must be in range (1 , 100)
+    '''
+    UwBot.move('FORWARD', 20)
