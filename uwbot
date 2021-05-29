@@ -1,13 +1,15 @@
 from propeller import Propeller
 from water_depth_sensor import WaterDepthSensor
 
-
-import time
+import cv2
+import datetime
 import board
 import busio
 import adafruit_ads1x15.ads1015 as ADS
 from adafruit_ads1x15.analog_in import AnalogIn
 from adafruit_ads1x15.ads1x15 import Mode
+
+
 class UwBot():
 
     def __init__(self):
@@ -17,7 +19,7 @@ class UwBot():
         # int DHT11
         pass
 
-    def move(self,direction,speed):
+    def move(self, direction, speed):
         '''
         direction list = ['FORWARD', 'BACKWARD']
         speed must in range [0,100]
@@ -26,36 +28,92 @@ class UwBot():
         now_speed_clockwise = 83.55 * ((101 - speed) / 100)
         now_speed_counterclockwise = 180 - 83.55 * ((101 - speed) / 100)
         if direction == 'FORWARD':
-         
+
             self.__propeller.move_forward(now_speed_clockwise)
-        
+
         elif direction == 'BAKCWORD':
 
             self.__propeller.move_backward(now_speed_counterclockwise)
-            
+
         elif direction == 'left':
-            self.__propeller.move_left(now_speed_clockwise,now_speed_counterclockwise)
+            self.__propeller.move_left(now_speed_clockwise, now_speed_counterclockwise)
 
         elif direction == 'right':
-            self.__propeller.move_right(now_speed_clockwise,now_speed_counterclockwise)
+            self.__propeller.move_right(now_speed_clockwise, now_speed_counterclockwise)
 
         elif direction == 'up':
             water_depth = WaterDepthSensor.read_water_depth()
-            self.__propeller.move_up(now_speed_clockwise,water_depth)
-        
-        elif direction == 'down' :
+            self.__propeller.move_up(now_speed_clockwise, water_depth)
+
+        elif direction == 'down':
             water_depth = WaterDepthSensor.read_water_depth()
             print(water_depth)
-            self.__propeller.move_down(now_speed_counterclockwise,water_depth)
-            
+            self.__propeller.move_down(now_speed_counterclockwise, water_depth)
+
         elif direction == 'turn_left':
-            self.__propeller.turn_left(now_speed_clockwise,now_speed_counterclockwise)
+            self.__propeller.turn_left(now_speed_clockwise, now_speed_counterclockwise)
 
         elif direction == 'turn_right':
-            self.__propeller.turn_right(now_speed_clockwise,now_speed_counterclockwise)
-    
-    def start_all_cameras(self):
-        pass
+            self.__propeller.turn_right(now_speed_clockwise, now_speed_counterclockwise)
+
+    def num(x):
+        '''用来按顺序命名'''
+        x = x + 1
+        return x
+
+    def start_all_cameras(self,id):
+        f = cv2.VideoWriter_fourcc(*'MP42')
+        cam_url1 = 'rtsp://admin:123456@192.168.123.10:554/Streaming/Channels/201'
+        cam_url2 = 'rtsp://admin:123456@192.168.123.20:554/Streaming/Channels/201'
+        cam_url3 = 'rtsp://admin:123456@192.168.123.30:554/Streaming/Channels/201'
+        id = UwBot.num(id)
+        cap1 = cv2.VideoCapture(cam_url1)
+        cap2 = cv2.VideoCapture(cam_url2)
+        cap3 = cv2.VideoCapture(cam_url3)
+        out1 = cv2.VideoWriter("cam01#" + str(u) + ".avi", f, 20, (1920, 1080))
+        out2 = cv2.VideoWriter("cam02#" + str(u) + ".avi", f, 20, (1920, 1080))
+        out3 = cv2.VideoWriter("cam03#" + str(u) + ".avi", f, 20, (1920, 1080))
+        # 为保存视频做准备
+        want_time = datetime.datetime.now() + datetime.timedelta(seconds=20)  # 设置每一段想录多长时间
+        want_time_hour = want_time.hour
+        want_time_minute = want_time.minute
+        want_time_second = want_time.second
+
+        while True:
+            # 一帧一帧的获取图像
+            time_now_hour = datetime.datetime.now().hour
+            time_now_minute = datetime.datetime.now().minute
+            time_now_second = datetime.datetime.now().second
+            ret1, frame1 = cap1.read()
+            ret2, frame2 = cap2.read()
+            ret3, frame3 = cap3.read()
+            frame1 = cv2.flip(frame1, 1)
+            frame2 = cv2.flip(frame2, 1)
+            frame3 = cv2.flip(frame3, 1)
+
+            out1.write(frame1)
+            out2.write(frame2)
+            out3.write(frame3)
+
+            # 显示结果帧
+            cv2.imshow("cam1", frame1)
+            cv2.imshow("cam2", frame2)
+            cv2.imshow("cam3", frame3)
+
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+            if time_now_hour == want_time_hour and time_now_minute == want_time_minute and time_now_second == want_time_second:
+                UwBot.start_all_cameras(id)
+        # 释放摄像头资源
+        cap1.release()
+        cap2.release()
+        cap3.release()
+
+        out1.release()
+        out2.release()
+        out3.release()
+
+        cv2.destroyAllWindows()
 
     def read_room_humidity(self):
         pass
@@ -65,7 +123,6 @@ class UwBot():
 
     def read_user_button(self):
         pass
-
 
     def read_distance_to_bottom(self):
         pass
@@ -79,13 +136,13 @@ class UwBot():
         '''
         ads1015_address = 0x48
 
-        i2c_bus1 = (busio.I2C(board.SCL_1, board.SDA_1,frequency=100000))
+        i2c_bus1 = (busio.I2C(board.SCL_1, board.SDA_1, frequency=100000))
 
-        ads = ADS.ADS1015(i2c_bus1,address=ads1015_address )
+        ads = ADS.ADS1015(i2c_bus1, address=ads1015_address)
 
         chan = AnalogIn(ads, ADS.P1)
 
-        percent =(1 - (chan.voltage - 2.55)/-0.35) * 100   
+        percent = (1 - (chan.voltage - 2.55) / -0.35) * 100
         return percent
 
     def spin(self):
@@ -93,8 +150,6 @@ class UwBot():
             v = UwBot.read_battery(self)
             if v < 20:
                 self.__propeller.move_up(20, 0)
-                
-
 
 
 if __name__ == '__main__':
@@ -102,3 +157,4 @@ if __name__ == '__main__':
     The speed must be in range (1 , 100)
     '''
     UwBot.move('FORWARD', 20)
+    
