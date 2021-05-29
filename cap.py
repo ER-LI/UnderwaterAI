@@ -1,65 +1,62 @@
 import cv2
 import datetime
-cam_url1='rtsp://admin:123456@192.168.123.10:554/Streaming/Channels/201'
-cam_url2='rtsp://admin:123456@192.168.123.20:554/Streaming/Channels/201'
-cam_url3='rtsp://admin:123456@192.168.123.30:554/Streaming/Channels/201'
-f = cv2.VideoWriter_fourcc(*'MP42')
-out1 = cv2.VideoWriter("test01.avi",f,10,(1920,1080))
-out2 = cv2.VideoWriter("test02.avi",f,10,(1920,1080))
-out3 = cv2.VideoWriter("test03.avi",f,10,(1920,1080))
-cap1=cv2.VideoCapture(cam_url1)
-cap2=cv2.VideoCapture(cam_url2)
-cap3=cv2.VideoCapture(cam_url3) 
+def num(x):
+    '''用来按顺序命名'''
+    x = x +1
+    return x
+def video(u):
+    f = cv2.VideoWriter_fourcc(*'MP42')
+    cam_url1 = 'rtsp://admin:123456@192.168.123.10:554/Streaming/Channels/201'
+    cam_url2 = 'rtsp://admin:123456@192.168.123.20:554/Streaming/Channels/201'
+    cam_url3 = 'rtsp://admin:123456@192.168.123.30:554/Streaming/Channels/201'
+    u=num(u)
+    cap1 = cv2.VideoCapture(cam_url1)
+    cap2 = cv2.VideoCapture(cam_url2)
+    cap3 = cv2.VideoCapture(cam_url3)
+    out1 = cv2.VideoWriter("cam01#" + str(u) + ".avi", f, 20, (1920, 1080))
+    out2 = cv2.VideoWriter("cam02#" + str(u) + ".avi", f, 20, (1920, 1080))
+    out3 = cv2.VideoWriter("cam03#" + str(u) + ".avi", f, 20, (1920, 1080))
+    # 为保存视频做准备
+    want_time=datetime.datetime.now()+datetime.timedelta(seconds=20) #设置每一段想录多长时间
+    want_time_hour=want_time.hour
+    want_time_minute=want_time.minute
+    want_time_second=want_time.second
 
-if cap1.isOpened():
-    rval1, frame1 = cap1.read()  
-else:
-    cap1.open(cam_url1)
-    rval1 = False
-    print("error")
-if cap2.isOpened():
-    rval2, frame2 = cap2.read()
-    
-else:
-    cap2.open(cam_url2)
-    rval2 = False
-    print("error")
-if cap3.isOpened():
-    rval3, frame3 = cap3.read()
-    
-else:
-    cap3.open(cam_url3)
-    rval3 = False
-    print("error")
-while rval1 or rval2 or rval3:
-    frame1 = cv2.resize(frame1,(1920,1080))
-    frame2 = cv2.resize(frame2, (1920, 1080))
-    frame3 = cv2.resize(frame3, (1920, 1080))
-    rval1, frame1 = cap1.read()
-    rval2, frame2 = cap2.read()
-    rval3, frame3 = cap3.read()
-    if rval1 or rval2 or rval3 == True:
-        font = cv2.FONT_HERSHEY_SIMPLEX
-        #text = "1920x1080"
-        time = str(datetime.datetime.now())
-        #frame1 = cv2.putText(frame1,text,(10,50),font,0.5,(0,255,255),2,cv2.LINE_AA)
-        frame1 = cv2.putText(frame1,time,(10,100),font,1,(0,255,255),2,cv2.LINE_AA)
-        #frame2 = cv2.putText(frame2,text,(10,50),font,0.5,(0,255,255),2,cv2.LINE_AA)
-        frame2 = cv2.putText(frame2,time,(10,100),font,1,(0,255,255),2,cv2.LINE_AA)
-        frame3 = cv2.putText(frame3,time,(10,100),font,1,(0,255,255),2,cv2.LINE_AA)
+
+    while True:
+        # 一帧一帧的获取图像
+        time_now_hour=datetime.datetime.now().hour
+        time_now_minute=datetime.datetime.now().minute
+        time_now_second=datetime.datetime.now().second
+        ret1,frame1 = cap1.read()
+        ret2, frame2 = cap2.read()
+        ret3, frame3 = cap3.read()
+        frame1 = cv2.flip(frame1, 1)
+        frame2 = cv2.flip(frame2, 1)
+        frame3 = cv2.flip(frame3, 1)
+
         out1.write(frame1)
-        cv2.imshow("cam_num1", frame1)
         out2.write(frame2)
-        cv2.imshow("cam_num2", frame2)
         out3.write(frame3)
-        cv2.imshow("cam_num3", frame3)
-       
-    else:
-        break                                   
-    key = cv2.waitKey(1)
-    if key == 27:                                     
-        break
-cap1.release()
-cap2.release()
-cap3.release()
-cv2.destroyAllWindows()                               
+
+        # 显示结果帧
+        cv2.imshow("cam1", frame1)
+        cv2.imshow("cam2", frame2)
+        cv2.imshow("cam3", frame3)
+
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+        if time_now_hour==want_time_hour and time_now_minute == want_time_minute and time_now_second ==want_time_second:
+            video(u)
+    # 释放摄像头资源
+    cap1.release()
+    cap2.release()
+    cap3.release()
+
+    out1.release()
+    out2.release()
+    out3.release()
+
+    cv2.destroyAllWindows()
+if __name__ == '__main__':
+    video(0)
