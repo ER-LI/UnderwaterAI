@@ -1,16 +1,20 @@
 from cam_gs_nolink import message
 from propeller import Propeller
 from water_depth_sensor import WaterDepthSensor
+import mpu6050
 
 import gi
 gi.require_version('Gst', '1.0')
 from gi.repository import Gst, GObject
 import threading
 
+import serial
+from serial.serialutil import Timeout
 
 import signal
 import board
 import busio
+import smbus
 
 import Adafruit_ADS1x15.ADS1x15 as ADS
 from adafruit_ads1x15.analog_in import AnalogIn
@@ -67,14 +71,35 @@ class UwBot():
         pass
 
     def read_room_temperature(self):
-        pass
-
+        room_temperture = mpu6050.Mpu6050.get_temp()
+        return room_temperture
+    def read_water_temperature(self):
+        uart_port = serial.Serial(port= '/dev/ttyTHS1', 
+                          baudrate=9600)
+        print(uart_port.isOpen())
+        data = [0x6f, 0x01, 0x06, 0xd0]
+        uart_port.write(data)    
+        uart_port.timeout = 1
+        received_data = uart_port.readall()   
+        temperature = received_data[3]
+        return temperature
+    def read_x_y_z_Acceleration_Gyroscope (self):
+        a_x,a_y,a_z = mpu6050.Mpu6050.get_accel_data()
+        g_x,g_y,g_z = mpu6050.Mpu6050.get_gyro_data()
+        return a_x,a_y,a_z,g_x,g_y,g_z
     def read_user_button(self):
         pass
 
     def read_distance_to_bottom(self):
-        pass
-
+        uart_port = serial.Serial(port= '/dev/ttyTHS1', 
+                          baudrate=9600)
+        print(uart_port.isOpen())
+        data = [0x6f, 0x01, 0x06, 0xd0]
+        uart_port.write(data)    
+        uart_port.timeout = 1
+        received_data = uart_port.readall()   
+        distance = received_data[4]*256 + received_data[5]
+        return distance
     def read_water_depth(self):
         pass
 
